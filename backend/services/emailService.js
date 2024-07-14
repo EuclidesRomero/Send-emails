@@ -27,10 +27,7 @@ const sendSingleEmail = () => {
       }
       
       main().catch(console.error);
-      console.log("HOST:", process.env.HOST);
-      console.log("USER:", process.env.USER);
-      console.log("PASSWORD:", process.env.PASSWORD);
-
+    
 
       return {msg: 'El mensaje fue enviado'}
 
