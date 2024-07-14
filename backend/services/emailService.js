@@ -21,12 +21,16 @@ const sendSingleEmail = () => {
           text: "Funcionó correctamente el envio de correo", // plain text body
           html: "<b>Este es un mensaje de prueba utilizando el servicio de AWS</b>", // html body
         });
-      
+
         console.log("Message sent: %s", info.messageId);
         // Message sent: <d786aa62-4e0a-070a-47ed-0b0666549519@ethereal.email>
       }
       
       main().catch(console.error);
+      console.log("HOST:", process.env.HOST);
+      console.log("USER:", process.env.USER);
+      console.log("PASSWORD:", process.env.PASSWORD);
+
 
       return {msg: 'El mensaje fue enviado'}
 
