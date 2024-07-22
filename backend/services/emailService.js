@@ -1,38 +1,94 @@
-import nodemailer from 'nodemailer'
+import { SendEmailCommand, SendBulkTemplatedEmailCommand} from '@aws-sdk/client-ses';
+import { SESv2Client} from "@aws-sdk/client-sesv2"; 
+import { awsConfig } from '../../config.js';
 
-const sendSingleEmail = () => {
-    const transporter = nodemailer.createTransport({
-        host: process.env.HOST,
-        port: 587,
-        secure: false, // Use `true` for port 465, `false` for all other ports
-        auth: {
-          user: process.env.USER,
-          pass: process.env.PASSWORD
+//Instanciamos el cliente
+const client = new SESv2Client(awsConfig);
+//Envia un mensaje:
+const sendSingleEmail = async () => {
+  const input = {
+    Source: process.env.EMAIL_SOURCE,
+    Destination: {
+      ToAddresses: [process.env.EMAIL_DESTINATION],
+    },
+    Message: {
+      Subject: {
+        Data: "Correo de prueba",
+        Charset: "UTF-8",
+      },
+      Body: {
+        Text: {
+          Data: "Funcionó correctamente el envio de correo",
+          Charset: "UTF-8",
         },
-      });
-      
-      // async..await is not allowed in global scope, must use a wrapper
-      async function main() {
-        // send mail with defined transport object
-        const info = await transporter.sendMail({
-          from: 'pruebatestbq@gmail.com', // sender address
-          to: "euclidesantonioromeroibarra@gmail.com", // list of receivers
-          subject: "Correo de prueba", // Subject line
-          text: "Funcionó correctamente el envio de correo", // plain text body
-          html: "<b>Este es un mensaje de prueba utilizando el servicio de AWS</b>", // html body
-        });
+        Html: {
+          Data: "<b>Este es un mensaje de prueba utilizando el servicio de AWS</b>",
+          Charset: "UTF-8",
+        },
+      },
+    },
+    ReplyToAddresses: [process.env.EMAIL_SOURCE],
+  };
 
-        console.log("Message sent: %s", info.messageId);
-        // Message sent: <d786aa62-4e0a-070a-47ed-0b0666549519@ethereal.email>
-      }
-      
-      main().catch(console.error);
+  try {
+    const command = new SendEmailCommand(input);
+    const response = await client.send(command);
+    console.log("Message sent: %s", response.MessageId);
+    return {
+      statusCode: 200,
+      body: JSON.stringify( response.MessageId ),
+    };
+  } catch (error) {
+    console.error("Error sending email: ", error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error }),
+    };
     
+  }
+};
 
-      return {msg: 'El mensaje fue enviado'}
+//Envia multiples emails:
+const sendMultipleEmail = async (destinatarios) => {
+  const bulkEmailEntries = destinatarios.map(email => ({
+    Destination: {
+      ToAddresses: [email],
+    },
+    ReplacementTemplateData: JSON.stringify({
+      subject: "Correo de prueba",
+      text: "Funcionó correctamente el envío de correo",
+      html: "<b>Este es un mensaje de prueba utilizando el servicio de AWS parte masica</b>",
+    }),
+  }));
 
-}
+ 
+  const input = {
+    Source: process.env.EMAIL_SOURCE,
+    Template: 'Prueba',
+    Destinations: bulkEmailEntries,
+    DefaultTemplateData: '{}',  
+    ReplyToAddresses: [process.env.EMAIL_SOURCE],
+  };
+
+  const command = new SendBulkTemplatedEmailCommand(input);
+
+  try {
+    const response = await client.send(command); 
+    console.log('Emails enviados con éxito:', response);
+    return {
+      statusCode: 200,
+      body: JSON.stringify( response.MessageId),
+    };
+  } catch (error) {
+    console.error('Error al enviar los emails:', error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error }),
+    };
+  }
+};
 
 export {
-    sendSingleEmail
+  sendSingleEmail,
+  sendMultipleEmail
 }
