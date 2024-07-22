@@ -1,6 +1,5 @@
 import  express from "express";
 import dotenv from 'dotenv';
-import { sendEmail } from "./backend/controllers/sendMessageController.js";
 import sendMessageRoutes from './backend/routes/sendMessageRoutes.js'
 
 const app = express();
